@@ -1,32 +1,800 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+   import React, { useState, useEffect } from 'react';
+
+const CynicismSurvey = () => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [showResults, setShowResults] = useState(false);
+  const [studentName, setStudentName] = useState('');
+  const [isStarted, setIsStarted] = useState(false);
+  const [classResults, setClassResults] = useState({});
+  const [totalResponses, setTotalResponses] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+
+  const questions = [
+    "Financial gain is all that counts in business.",
+    "Ethical standards must be compromised in business practice.",
+    "The more financially successful the business person, the more unethical the behavior.",
+    "Moral values are irrelevant in business.",
+    "The business world has its own rules.",
+    "Businesspeople care only about making profit.",
+    "Business is like a game one plays to win.",
+    "In business, people will do anything to further their own interest.",
+    "Competition forces business managers to resort to shady practices.",
+    "The profit motive pressures managers to compromise their ethical concerns."
+  ];
+
+  // Initialize class results
+  useEffect(() => {
+    const initialResults = {};
+    questions.forEach((_, index) => {
+      initialResults[index] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    });
+    setClassResults(initialResults);
+  }, []);
+
+  const handleAnswer = (rating) => {
+    setSelectedAnswer(rating);
+    
+    setTimeout(() => {
+      const newAnswers = { ...answers, [currentQuestion]: rating };
+      setAnswers(newAnswers);
+
+      // Update class results
+      const newClassResults = { ...classResults };
+      newClassResults[currentQuestion][rating] = (newClassResults[currentQuestion][rating] || 0) + 1;
+      setClassResults(newClassResults);
+
+      setSelectedAnswer(null);
+
+      // Auto-advance to next question
+      setTimeout(() => {
+        if (currentQuestion < questions.length - 1) {
+          setCurrentQuestion(currentQuestion + 1);
+        } else {
+          setShowResults(true);
+          setTotalResponses(prev => prev + 1);
+        }
+      }, 300);
+    }, 500);
+  };
+
+  const calculateScore = () => {
+    return Object.values(answers).reduce((sum, rating) => sum + rating, 0);
+  };
+
+  const getScoreInterpretation = (score) => {
+    if (score <= 20) return { level: "Optimistic Perspective", color: "text-emerald-600", description: "You tend to have faith in business ethics and practices.", icon: "💚" };
+    if (score <= 30) return { level: "Balanced Viewpoint", color: "text-blue-600", description: "You have measured views about business ethics and practices.", icon: "⚖️" };
+    if (score <= 40) return { level: "Skeptical Outlook", color: "text-amber-600", description: "You tend to be cautious about business ethics and practices.", icon: "🤔" };
+    return { level: "Critical Perspective", color: "text-red-600", description: "You are highly analytical about business ethics and practices.", icon: "🔍" };
+  };
+
+  const createPrintableReport = () => {
+    const score = calculateScore();
+    const interpretation = getScoreInterpretation(score);
+    const classAverage = totalResponses > 0 ? (Object.values(classResults).reduce((sum, qResults) => {
+      const qAvg = Object.entries(qResults).reduce((qSum, [rating, count]) => qSum + (parseInt(rating) * count), 0) / 
+                   Math.max(1, Object.values(qResults).reduce((total, count) => total + count, 0));
+      return sum + qAvg;
+    }, 0) / questions.length * questions.length).toFixed(1) : 'N/A';
+    
+    return `<!DOCTYPE html>
+<html>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Ethics Assessment</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Business Ethics Assessment Report - ${studentName}</title>
     <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+        @page { 
+            margin: 0.75in; 
+            size: letter; 
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { margin: 0; }
+            .page-break { page-break-before: always; }
+        }
+        body {
+            font-family: 'Times New Roman', serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 20px;
+            font-size: 12pt;
+            background: white;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #1e40af;
+            font-size: 24pt;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1e40af;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #374151;
+        }
+        .info-value {
+            color: #6b7280;
+        }
+        .score-container {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+            border-left: 5px solid #2563eb;
+        }
+        .score-main {
+            font-size: 32pt;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .score-level {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1e40af;
+        }
+        .question-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            background: #fafafa;
+            page-break-inside: avoid;
+        }
+        .question-header {
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-size: 12pt;
+        }
+        .question-text {
+            margin-bottom: 12px;
+            color: #374151;
+            line-height: 1.5;
+        }
+        .response-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .response-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dotted #d1d5db;
+        }
+        .response-label {
+            font-weight: bold;
+            color: #374151;
+        }
+        .response-value {
+            color: #6b7280;
+        }
+        .class-distribution {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 10pt;
+        }
+        .distribution-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #374151;
+        }
+        .methodology {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .methodology h4 {
+            color: #1e40af;
+            margin-bottom: 10px;
+            font-size: 12pt;
+        }
+        .methodology ul {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .methodology li {
+            margin-bottom: 5px;
+            color: #4b5563;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 10pt;
+        }
+        .print-instructions {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .action-button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        .action-button:hover {
+            background: #1d4ed8;
+        }
+        .action-button.secondary {
+            background: #059669;
+        }
+        .action-button.secondary:hover {
+            background: #047857;
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <div class="print-instructions no-print">
+        <h3>📄 Save Your Assessment Report</h3>
+        <p><strong>Multiple Save Options Available:</strong></p>
+        <div class="action-buttons">
+            <button class="action-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+            <button class="action-button secondary" onclick="downloadAsHtml()">💾 Download HTML File</button>
+        </div>
+        <p><small><strong>For PDF:</strong> Use Ctrl+P (Windows) or Cmd+P (Mac), then "Save as PDF"<br>
+        <strong>For HTML:</strong> Click "Download HTML File" to save a copy you can open anytime</small></p>
+    </div>
 
-        const CynicismSurvey = () => {
-          // [PASTE THE ENTIRE REACT COMPONENT CODE HERE]
-          // Copy everything from "const [currentQuestion, setCurrentQuestion]..." 
-          // all the way to "export default CynicismSurvey;"
-          // BUT REMOVE the "export default CynicismSurvey;" line at the end
+    <div class="header">
+        <h1>Business Ethics Assessment Report</h1>
+        <p style="font-size: 14pt; color: #6b7280; font-style: italic;">Academic Performance Analysis</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Student Information</div>
+        <div class="info-grid">
+            <div class="info-label">Name:</div>
+            <div class="info-value">${studentName}</div>
+            <div class="info-label">Date:</div>
+            <div class="info-value">${new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</div>
+            <div class="info-label">Time:</div>
+            <div class="info-value">${new Date().toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              timeZoneName: 'short'
+            })}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Executive Summary</div>
+        <div class="score-container">
+            <div class="score-main">${score}/50</div>
+            <div class="score-level">${interpretation.level}</div>
+            <div style="font-style: italic; color: #4b5563;">${interpretation.description}</div>
+        </div>
+        
+        <div class="info-grid">
+            <div class="info-label">Class Average:</div>
+            <div class="info-value">${classAverage}/50</div>
+            <div class="info-label">Your Position:</div>
+            <div class="info-value">${score > parseFloat(classAverage) ? 'Above Average' : score < parseFloat(classAverage) ? 'Below Average' : 'At Average'}</div>
+            <div class="info-label">Class Size:</div>
+            <div class="info-value">${totalResponses} participants</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Detailed Analysis</div>
+        <p style="text-align: justify;">
+            ${score <= 20 ? 
+            'Your responses indicate a generally optimistic view of business practices. You tend to believe that ethical standards can be maintained in business environments and that financial success does not necessarily correlate with unethical behavior.' :
+            score <= 30 ?
+            'Your responses show a balanced perspective on business ethics. You recognize both the potential for ethical business practices and the real pressures that can lead to ethical compromises in competitive environments.' :
+            score <= 40 ?
+            'Your responses reflect a cautious approach to business ethics. You are aware of the various pressures and incentives that can lead to ethical compromises in business settings and tend to be skeptical about claims of purely ethical business.' :
+            'Your responses indicate a highly analytical perspective on business practices. You are keenly aware of the systemic pressures, competitive forces, and profit motives that can influence ethical decision-making in business environments.'}
+        </p>
+    </div>
+
+    <div class="section page-break">
+        <div class="section-title">Question-by-Question Results</div>
+        ${questions.map((q, i) => {
+          const responseText = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][answers[i] - 1];
+          const questionAvg = classResults[i] && Object.values(classResults[i]).some(count => count > 0) ? 
+            (Object.entries(classResults[i]).reduce((sum, [rating, count]) => sum + (parseInt(rating) * count), 0) / 
+             Object.values(classResults[i]).reduce((total, count) => total + count, 1)).toFixed(1) : 'N/A';
+          
+          return `
+            <div class="question-item">
+                <div class="question-header">Question ${i + 1}</div>
+                <div class="question-text">${q}</div>
+                <div class="response-grid">
+                    <div>
+                        <div class="response-item">
+                            <span class="response-label">Your Response:</span>
+                            <span class="response-value">${answers[i]}/5 (${responseText})</span>
+                        </div>
+                        <div class="response-item">
+                            <span class="response-label">Class Average:</span>
+                            <span class="response-value">${questionAvg}/5</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="response-item">
+                            <span class="response-label">Your Position:</span>
+                            <span class="response-value">${answers[i] > parseFloat(questionAvg) ? 'Above average' : 
+                                                      answers[i] < parseFloat(questionAvg) ? 'Below average' : 'At average'}</span>
+                        </div>
+                    </div>
+                </div>
+                ${totalResponses > 1 ? `
+                <div class="class-distribution">
+                    <div class="distribution-title">Class Distribution:</div>
+                    ${[1,2,3,4,5].map(rating => {
+                      const count = classResults[i]?.[rating] || 0;
+                      const percentage = totalResponses > 0 ? ((count / totalResponses) * 100).toFixed(0) : 0;
+                      return `Rating ${rating}: ${count} students (${percentage}%)`;
+                    }).join(' | ')}
+                </div>
+                ` : ''}
+            </div>
+          `;
+        }).join('')}
+    </div>
+
+    <div class="section">
+        <div class="section-title">Methodology & Assessment Details</div>
+        <div class="methodology">
+            <h4>Assessment Details</h4>
+            <ul>
+                <li><strong>Instrument:</strong> Business Ethics Perspective Survey</li>
+                <li><strong>Scale:</strong> 5-point Likert Scale (1=Strongly Disagree, 5=Strongly Agree)</li>
+                <li><strong>Items:</strong> 10 questions measuring perspectives on business practices</li>
+                <li><strong>Score Range:</strong> 10-50 points</li>
+            </ul>
+            
+            <h4>Score Interpretation Ranges</h4>
+            <ul>
+                <li><strong>10-20 points:</strong> Optimistic Perspective (High faith in business ethics)</li>
+                <li><strong>21-30 points:</strong> Balanced Viewpoint (Moderate perspective)</li>
+                <li><strong>31-40 points:</strong> Skeptical Outlook (Cautious about business ethics)</li>
+                <li><strong>41-50 points:</strong> Critical Perspective (Highly analytical approach)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+        <p>Business Ethics Assessment Tool | Academic Research Platform</p>
+    </div>
+
+    <script>
+        function downloadAsHtml() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Business_Ethics_Report_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Auto-focus for better accessibility
+        window.onload = function() {
+            const firstButton = document.querySelector('.action-button');
+            if (firstButton) firstButton.focus();
         };
+    </script>
+</body>
+</html>`;
+  };
 
-        // Render the component
-        ReactDOM.render(<CynicismSurvey />, document.getElementById('root'));
+  const generateReport = () => {
+    try {
+      const htmlContent = createPrintableReport();
+      
+      // Try to open in new window first (preferred for Canvas)
+      const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+      
+      if (printWindow && !printWindow.closed) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+      } else {
+        // Fallback: Download as HTML file if popup blocked
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Business_Ethics_Report_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('Report downloaded as HTML file. You can open this file in any browser and print/save as PDF.');
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Unable to generate report. Please try again or contact your instructor.');
+    }
+  };
+
+  const resetSurvey = () => {
+    setCurrentQuestion(0);
+    setAnswers({});
+    setShowResults(false);
+    setStudentName('');
+    setIsStarted(false);
+  };
+
+  if (!isStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-6">
+              <span className="text-3xl text-white">📊</span>
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              Business Ethics Assessment
+            </h1>
+            <p className="text-xl text-gray-600 mb-6">
+              Explore your perspectives on business practices and ethics
+            </p>
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl mb-8">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">10</div>
+                  <div className="text-sm text-gray-600">Questions</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">5</div>
+                  <div className="text-sm text-gray-600">Point Scale</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-indigo-600">PDF</div>
+                  <div className="text-sm text-gray-600">Results</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mb-8">
+            <label className="block text-left text-lg font-semibold text-gray-700 mb-3">
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={studentName}
+              onChange={(e) => setStudentName(e.target.value)}
+              className="w-full p-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+              placeholder="Enter your full name"
+              onKeyPress={(e) => e.key === 'Enter' && studentName.trim() && setIsStarted(true)}
+            />
+          </div>
+
+          <button
+            onClick={() => setIsStarted(true)}
+            disabled={!studentName.trim()}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white text-xl font-semibold py-4 px-8 rounded-xl transform transition hover:scale-105 disabled:hover:scale-100 shadow-lg"
+          >
+            Begin Assessment
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (showResults) {
+    const score = calculateScore();
+    const interpretation = getScoreInterpretation(score);
+    const classAverage = totalResponses > 0 ? (Object.values(classResults).reduce((sum, qResults) => {
+      const qAvg = Object.entries(qResults).reduce((qSum, [rating, count]) => qSum + (parseInt(rating) * count), 0) / 
+                   Math.max(1, Object.values(qResults).reduce((total, count) => total + count, 0));
+      return sum + qAvg;
+    }, 0) / questions.length * questions.length).toFixed(1) : 'N/A';
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-xl p-8 mb-6">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl mb-6">
+                <span className="text-3xl text-white">✓</span>
+              </div>
+              <h2 className="text-4xl font-bold text-gray-800 mb-2">Assessment Complete</h2>
+              <h3 className="text-xl text-gray-600">Thank you, {studentName}</h3>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+                <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                  <span className="mr-2">📈</span> Your Results
+                </h4>
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-blue-600 mb-3">{score}<span className="text-2xl text-gray-500">/50</span></div>
+                  <div className={`text-xl font-semibold mb-3 ${interpretation.color} flex items-center justify-center`}>
+                    <span className="mr-2">{interpretation.icon}</span>
+                    {interpretation.level}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{interpretation.description}</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
+                <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                  <span className="mr-2">👥</span> Class Insights
+                </h4>
+                <div className="text-center mb-6">
+                  <div className="text-3xl font-bold text-purple-600 mb-3">
+                    {totalResponses} Participants
+                  </div>
+                  <p className="text-gray-700 mb-4">Have completed this assessment</p>
+                  {totalResponses > 1 && (
+                    <div className="bg-white p-4 rounded-lg">
+                      <div className="text-lg font-semibold text-purple-600 mb-2">
+                        Class Average: {classAverage}/50
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {(() => {
+                          const userScore = calculateScore();
+                          return userScore > parseFloat(classAverage) ? "You scored above class average" : userScore < parseFloat(classAverage) ? "You scored below class average" : "You scored at class average";
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-2xl mb-8 border">
+              <h4 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <span className="mr-2">📋</span> Detailed Results by Question
+              </h4>
+              <div className="grid grid-cols-1 gap-6">
+                {questions.map((question, index) => (
+                  <div key={index} className="bg-white p-6 rounded-xl border border-gray-200">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <span className="text-lg font-semibold text-blue-600 mb-2 block">Question {index + 1}</span>
+                        <p className="text-gray-700 leading-relaxed">{question}</p>
+                      </div>
+                      <div className="ml-6 text-center min-w-[100px]">
+                        <div className="text-sm text-gray-600 mb-1">Your Answer</div>
+                        <div className="flex items-center justify-center">
+                          <span className="text-2xl font-bold text-blue-600 mr-2">{answers[index]}</span>
+                          <div className="flex">
+                            {[1,2,3,4,5].map(star => (
+                              <div key={star} className={`w-3 h-3 rounded-full mx-0.5 ${star <= answers[index] ? 'bg-blue-500' : 'bg-gray-200'}`} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Class Results for this question */}
+                    {totalResponses > 1 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="text-sm font-semibold text-gray-700 mb-3">Class Response Distribution</div>
+                        <div className="grid grid-cols-5 gap-2">
+                          {[1,2,3,4,5].map(rating => {
+                            const count = classResults[index]?.[rating] || 0;
+                            const percentage = totalResponses > 0 ? ((count / totalResponses) * 100).toFixed(0) : 0;
+                            return (
+                              <div key={rating} className="text-center">
+                                <div className={`p-2 rounded-lg text-white text-sm font-semibold mb-1 ${
+                                  rating === 1 ? 'bg-red-500' :
+                                  rating === 2 ? 'bg-orange-500' :
+                                  rating === 3 ? 'bg-yellow-500' :
+                                  rating === 4 ? 'bg-green-500' :
+                                  'bg-blue-500'
+                                }`}>
+                                  {rating}
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  {count} student{count !== 1 ? 's' : ''}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  ({percentage}%)
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-3 text-center">
+                          <div className="text-sm text-gray-600">
+                            Question Average: {classResults[index] && Object.values(classResults[index]).some(count => count > 0) ? 
+                              (Object.entries(classResults[index]).reduce((sum, [rating, count]) => sum + (parseInt(rating) * count), 0) / 
+                               Object.values(classResults[index]).reduce((total, count) => total + count, 1)).toFixed(1) : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={generateReport}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-lg font-semibold py-4 px-8 rounded-xl transform transition hover:scale-105 shadow-lg flex items-center justify-center"
+              >
+                <span className="mr-2">📄</span> Generate Report
+              </button>
+              <button
+                onClick={resetSurvey}
+                className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white text-lg font-semibold py-4 px-8 rounded-xl transform transition hover:scale-105 shadow-lg flex items-center justify-center"
+              >
+                <span className="mr-2">🔄</span> Retake Assessment
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Business Ethics Assessment</h1>
+              <p className="text-gray-600">{studentName}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600 mb-2">
+                {currentQuestion + 1} of {questions.length}
+              </div>
+              <div className="w-32 bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Question Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 border">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl mb-6">
+              <span className="text-2xl">💭</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-8 leading-relaxed max-w-3xl mx-auto">
+              {questions[currentQuestion]}
+            </h2>
+            
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl mb-8 border border-blue-100">
+              <div className="flex justify-center items-center space-x-8 text-sm">
+                <span className="flex items-center"><span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span><strong>Strongly Disagree</strong></span>
+                <span className="text-gray-400">•</span>
+                <span className="flex items-center"><span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span><strong>Strongly Agree</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Rating Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+            {[1, 2, 3, 4, 5].map((rating) => (
+              <button
+                key={rating}
+                onClick={() => handleAnswer(rating)}
+                className={`p-6 rounded-xl font-semibold text-lg transform transition-all duration-200 hover:scale-105 shadow-md border-2 ${
+                  selectedAnswer === rating 
+                    ? 'scale-105 shadow-lg' 
+                    : ''
+                } ${
+                  rating === 1 ? 'bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-red-500' :
+                  rating === 2 ? 'bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-orange-500' :
+                  rating === 3 ? 'bg-gradient-to-b from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white border-yellow-500' :
+                  rating === 4 ? 'bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-green-500' :
+                  'bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-blue-500'
+                }`}
+              >
+                <div className="text-3xl mb-3">
+                  {rating === 1 ? '1' : rating === 2 ? '2' : rating === 3 ? '3' : rating === 4 ? '4' : '5'}
+                </div>
+                <div className="text-sm leading-tight">
+                  {rating === 1 ? 'Strongly\nDisagree' :
+                   rating === 2 ? 'Disagree' :
+                   rating === 3 ? 'Neutral' :
+                   rating === 4 ? 'Agree' :
+                   'Strongly\nAgree'}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Progress Summary */}
+        {Object.keys(answers).length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 border">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Assessment Progress</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {questions.map((_, index) => (
+                <div 
+                  key={index}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center font-semibold text-white transition-all ${
+                    answers[index] ? 'bg-gradient-to-br from-green-500 to-emerald-600 shadow-md' : 
+                    index === currentQuestion ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-md scale-110' : 
+                    'bg-gray-300'
+                  }`}
+                >
+                  {answers[index] || (index + 1)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CynicismSurvey;
     </script>
 </body>
 </html>
