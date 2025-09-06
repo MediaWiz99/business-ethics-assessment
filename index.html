@@ -340,7 +340,7 @@
                 </div>
             </div>
             <button class="download-btn" onclick="generatePDF()">📄 Download PDF Report</button>
-            <button class="download-btn" onclick="generateHTMLReport()">🌐 View HTML Report</button>
+            <button class="download-btn" onclick="generateSimpleReport()">🌐 View Report</button>
             <button class="download-btn" onclick="resetSurvey()">🔄 Take Again</button>
         </div>
     </div>
@@ -355,7 +355,7 @@
     </div>
 
     <script>
-        // Business Ethics Cynicism Questions - Hardcoded to ensure they display
+        // Business Ethics Cynicism Questions
         const businessEthicsQuestions = [
             "Most businesses will sacrifice ethical standards to increase profits.",
             "Corporate social responsibility is mainly about improving public image rather than genuine concern.",
@@ -386,25 +386,19 @@
         // Create survey with business ethics questions
         function createSurvey() {
             const form = document.getElementById('disposition-survey');
-            form.innerHTML = ''; // Clear existing content
-            
-            console.log('Creating Business Ethics Cynicism Assessment with', businessEthicsQuestions.length, 'questions');
+            form.innerHTML = '';
             
             businessEthicsQuestions.forEach((question, index) => {
-                // Create question container
                 const questionDiv = document.createElement('div');
                 questionDiv.className = 'question';
                 
-                // Add question text
                 const questionTitle = document.createElement('h3');
                 questionTitle.textContent = `${index + 1}. ${question}`;
                 questionDiv.appendChild(questionTitle);
                 
-                // Create rating scale container
                 const ratingScale = document.createElement('div');
                 ratingScale.className = 'rating-scale';
                 
-                // Create rating options with full descriptive text
                 const ratingOptions = [
                     { value: 1, text: '1 - Strongly Disagree' },
                     { value: 2, text: '2 - Disagree' },
@@ -414,11 +408,9 @@
                 ];
                 
                 ratingOptions.forEach(option => {
-                    // Create option container
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'rating-option';
                     
-                    // Create radio input
                     const input = document.createElement('input');
                     input.type = 'radio';
                     input.id = `q${index}_${option.value}`;
@@ -426,30 +418,21 @@
                     input.value = option.value;
                     input.required = true;
                     
-                    // Create label with full text
                     const label = document.createElement('label');
                     label.setAttribute('for', `q${index}_${option.value}`);
                     label.textContent = option.text;
                     
-                    // Add to option container
                     optionDiv.appendChild(input);
                     optionDiv.appendChild(label);
-                    
-                    // Add to rating scale
                     ratingScale.appendChild(optionDiv);
                 });
                 
-                // Add rating scale to question
                 questionDiv.appendChild(ratingScale);
-                
-                // Add question to form
                 form.appendChild(questionDiv);
             });
-            
-            console.log('Survey created successfully with business ethics questions');
         }
 
-        // Update progress bar and button state
+        // Update progress bar
         function updateProgress() {
             const totalQuestions = businessEthicsQuestions.length;
             const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
@@ -475,7 +458,6 @@
                 return;
             }
             
-            // Collect responses
             responses = [];
             let totalScore = 0;
             
@@ -494,7 +476,6 @@
                 totalScore += score;
             }
             
-            // Store data
             const studentData = {
                 name: name,
                 responses: responses,
@@ -505,7 +486,6 @@
             classData.push(studentData);
             localStorage.setItem('classResponses', JSON.stringify(classData));
             
-            // Show results
             showResults(studentData);
             updateInstructorStats();
         }
@@ -515,23 +495,19 @@
             const maxScore = businessEthicsQuestions.length * 5;
             const studentPercentage = Math.round((studentData.totalScore / maxScore) * 100);
             
-            // Calculate class average
             const classAverage = classData.reduce((sum, student) => sum + student.totalScore, 0) / classData.length;
             const classPercentage = Math.round((classAverage / maxScore) * 100);
             
-            // Update display
             document.getElementById('individual-score').textContent = studentData.totalScore;
             document.getElementById('individual-percentage').textContent = studentPercentage + '% Business Cynicism';
             document.getElementById('class-score').textContent = Math.round(classAverage);
             document.getElementById('class-percentage').textContent = classPercentage + '% Business Cynicism';
             
-            // Store for PDF generation
             window.currentResults = {
                 individual: studentData,
                 class: { average: classAverage, percentage: classPercentage, count: classData.length }
             };
             
-            // Switch views
             document.getElementById('survey-form').style.display = 'none';
             document.getElementById('results').style.display = 'block';
         }
@@ -547,90 +523,129 @@
             doc.setFillColor(79, 172, 254);
             doc.rect(0, 0, 210, 40, 'F');
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(20);
+            doc.setFontSize(18);
             doc.text('Business Ethics Cynicism Assessment Report', 105, 25, { align: 'center' });
             
             // Reset text color
             doc.setTextColor(0, 0, 0);
             
             // Student info
-            doc.setFontSize(14);
+            doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
             doc.text('STUDENT INFORMATION', 20, 55);
             doc.setFont(undefined, 'normal');
-            doc.setFontSize(12);
-            doc.text('Name: ' + results.individual.name, 20, 70);
-            doc.text('Date: ' + new Date().toLocaleDateString(), 20, 80);
-            doc.text('Class Participants: ' + classData.length, 20, 90);
+            doc.setFontSize(10);
+            doc.text('Name: ' + results.individual.name, 20, 68);
+            doc.text('Date: ' + new Date().toLocaleDateString(), 20, 76);
+            doc.text('Class Participants: ' + classData.length, 20, 84);
             
             // Results
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text('ASSESSMENT RESULTS', 20, 110);
-            doc.setFont(undefined, 'normal');
-            doc.setFontSize(12);
-            
             const individualPercentage = Math.round((results.individual.totalScore / maxScore) * 100);
-            doc.text(`Your Score: ${results.individual.totalScore}/${maxScore} (${individualPercentage}%)`, 20, 125);
-            doc.text(`Class Average: ${Math.round(results.class.average)}/${maxScore} (${results.class.percentage}%)`, 20, 135);
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('ASSESSMENT RESULTS', 20, 100);
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(10);
+            doc.text(`Your Score: ${results.individual.totalScore}/${maxScore} (${individualPercentage}%)`, 20, 113);
+            doc.text(`Class Average: ${Math.round(results.class.average)}/${maxScore} (${results.class.percentage}%)`, 20, 121);
             
             // Interpretation
             doc.setFont(undefined, 'bold');
-            doc.text('INTERPRETATION', 20, 155);
+            doc.text('INTERPRETATION', 20, 140);
             doc.setFont(undefined, 'normal');
             
             let interpretation = '';
             if (individualPercentage <= 30) {
-                interpretation = 'Optimistic Business Perspective: You tend to have faith in business ethics and believe most companies strive to operate ethically and responsibly.';
+                interpretation = 'Optimistic Business Perspective: You tend to have faith in business ethics.';
             } else if (individualPercentage <= 50) {
-                interpretation = 'Balanced Business Viewpoint: You have measured views about business ethics, recognizing both ethical and unethical practices in the business world.';
+                interpretation = 'Balanced Business Viewpoint: You have measured views about business ethics.';
             } else if (individualPercentage <= 70) {
-                interpretation = 'Skeptical Business Outlook: You tend to be cautious about trusting businesses and question corporate motivations, believing profit often comes before ethics.';
+                interpretation = 'Skeptical Business Outlook: You tend to be cautious about business ethics.';
             } else {
-                interpretation = 'Highly Cynical Business Perspective: You hold strong doubts about business ethics and expect profit-driven, self-interested behavior from companies.';
+                interpretation = 'Highly Cynical Business Perspective: You hold strong doubts about business ethics.';
             }
             
             const interpretationLines = doc.splitTextToSize(interpretation, 170);
-            doc.text(interpretationLines, 20, 170);
+            doc.text(interpretationLines, 20, 155);
             
-            doc.save(`${results.individual.name.replace(/[^a-zA-Z0-9]/g, '_')}_Business_Ethics_Assessment.pdf`);
+            // Add question breakdown
+            doc.addPage();
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('QUESTION-BY-QUESTION BREAKDOWN', 20, 20);
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(9);
+            
+            let yPos = 35;
+            results.individual.responses.forEach((response, index) => {
+                if (yPos > 260) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                const responseText = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][response.score - 1];
+                
+                doc.setFont(undefined, 'bold');
+                doc.text(`Q${index + 1}: ${response.question.substring(0, 70)}...`, 20, yPos);
+                doc.setFont(undefined, 'normal');
+                yPos += 6;
+                doc.text(`Your Response: ${response.score}/5 (${responseText})`, 20, yPos);
+                yPos += 10;
+            });
+            
+            doc.save(`${results.individual.name.replace(/[^a-zA-Z0-9]/g, '_')}_Business_Ethics_Report.pdf`);
         }
 
-        // Generate HTML Report
-        function generateHTMLReport() {
+        // Generate Simple HTML Report
+        function generateSimpleReport() {
             const results = window.currentResults;
             const maxScore = businessEthicsQuestions.length * 5;
             const individualPercentage = Math.round((results.individual.totalScore / maxScore) * 100);
             
             let interpretation = '';
             if (individualPercentage <= 30) {
-                interpretation = 'Optimistic Business Perspective: You tend to have faith in business ethics and believe most companies strive to operate ethically.';
+                interpretation = 'Optimistic Business Perspective: You have faith in business ethics.';
             } else if (individualPercentage <= 50) {
-                interpretation = 'Balanced Business Viewpoint: You have measured views about business ethics, recognizing both positive and negative practices.';
+                interpretation = 'Balanced Business Viewpoint: You have measured views about business ethics.';
             } else if (individualPercentage <= 70) {
-                interpretation = 'Skeptical Business Outlook: You tend to be cautious about trusting businesses and question corporate motivations.';
+                interpretation = 'Skeptical Business Outlook: You are cautious about business ethics.';
             } else {
-                interpretation = 'Highly Cynical Business Perspective: You hold strong doubts about business ethics and expect self-interested behavior.';
+                interpretation = 'Highly Cynical Business Perspective: You doubt business ethics practices.';
             }
             
             const htmlContent = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Business Ethics Assessment Report</title>
-<style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;background:#f8f9fa}.header{background:linear-gradient(135deg,#4facfe,#00f2fe);color:white;padding:30px;border-radius:10px;text-align:center;margin-bottom:30px}.section{background:white;padding:25px;border-radius:10px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}.score-card{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;padding:20px;border-radius:10px;text-align:center;margin:20px 0}h1,h2,h3{color:#333}.print-btn{background:#4facfe;color:white;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;font-size:16px;margin:10px 5px}@media print{.print-btn{display:none}body{background:white}}</style>
+<html><head><meta charset="UTF-8"><title>Business Ethics Report</title>
+<style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;background:#f8f9fa}
+.header{background:linear-gradient(135deg,#4facfe,#00f2fe);color:white;padding:30px;border-radius:10px;text-align:center;margin-bottom:30px}
+.section{background:white;padding:25px;border-radius:10px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+.score-card{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;padding:20px;border-radius:10px;text-align:center;margin:20px 0}
+.question-item{background:#f8f9fa;padding:15px;margin:10px 0;border-radius:5px;border-left:4px solid #4facfe}
+h1,h2,h3{color:#333}.print-btn{background:#4facfe;color:white;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;font-size:16px;margin:10px 5px}
+@media print{.print-btn{display:none}body{background:white}}</style>
 </head><body>
-<div class="header"><h1>Business Ethics Cynicism Assessment Report</h1><p>Analysis of Perspectives on Business Ethics</p></div>
-<div class="section"><h2>Student Information</h2><p><strong>Name:</strong> ${results.individual.name}</p><p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p><p><strong>Class Participants:</strong> ${classData.length} students</p></div>
-<div class="score-card"><h2>Your Results</h2><div style="font-size:2em;font-weight:bold">${results.individual.totalScore}/${maxScore}</div><div style="font-size:1.2em">${individualPercentage}% Business Cynicism</div></div>
-<div class="section"><h2>Class Comparison</h2><p><strong>Your Score:</strong> ${results.individual.totalScore}/${maxScore} (${individualPercentage}%)</p><p><strong>Class Average:</strong> ${Math.round(results.class.average)}/${maxScore} (${results.class.percentage}%)</p></div>
+<div class="header"><h1>Business Ethics Assessment Report</h1><p>Your Results and Analysis</p></div>
+<div class="section"><h2>Student Information</h2><p><strong>Name:</strong> ${results.individual.name}</p>
+<p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p><p><strong>Class Size:</strong> ${classData.length} students</p></div>
+<div class="score-card"><h2>Your Results</h2><div style="font-size:2em;font-weight:bold">${results.individual.totalScore}/${maxScore}</div>
+<div style="font-size:1.2em">${individualPercentage}% Business Cynicism</div></div>
+<div class="section"><h2>Class Comparison</h2><p><strong>Your Score:</strong> ${results.individual.totalScore}/${maxScore} (${individualPercentage}%)</p>
+<p><strong>Class Average:</strong> ${Math.round(results.class.average)}/${maxScore} (${results.class.percentage}%)</p></div>
 <div class="section"><h2>Interpretation</h2><p>${interpretation}</p></div>
-<div class="section" style="text-align:center"><button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button><button class="print-btn" onclick="window.close()">❌ Close</button></div>
-</body></html>`;
+<div class="section"><h2>Your Question Responses</h2>
+${results.individual.responses.map((response, index) => `
+<div class="question-item"><h4>Question ${index + 1}</h4><p>${response.question}</p>
+<p><strong>Your Response:</strong> ${response.score}/5 (${['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][response.score - 1]})</p></div>
+`).join('')}</div>
+<div class="section" style="text-align:center"><button class="print-btn" onclick="window.print()">🖨️ Print Report</button>
+<button class="print-btn" onclick="window.close()">❌ Close</button></div></body></html>`;
             
-            const reportWindow = window.open('', '_blank', 'width=900,height=700');
+            const reportWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
             if (reportWindow) {
                 reportWindow.document.write(htmlContent);
                 reportWindow.document.close();
+                reportWindow.focus();
             } else {
-                alert('Please allow popups to view the report, or use the PDF option instead.');
+                alert('Please allow popups to view the report.');
             }
         }
 
@@ -677,10 +692,6 @@
             console.log('=== BUSINESS ETHICS CLASS STATISTICS ===');
             console.log(`Total Responses: ${totalResponses}`);
             console.log(`Average Score: ${avgScore.toFixed(1)}/${maxScore} (${avgPercentage}%)`);
-            classData.forEach((student, index) => {
-                const percentage = Math.round((student.totalScore / maxScore) * 100);
-                console.log(`${index + 1}. ${student.name}: ${student.totalScore} (${percentage}%)`);
-            });
         }
 
         function toggleInstructorPanel() {
@@ -753,7 +764,7 @@
                 }
             });
             
-            console.log('Assessment initialization complete!');
+            console.log('Assessment initialization complete - All 20 business ethics questions loaded!');
         });
     </script>
 </body>
